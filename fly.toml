@@ -1,0 +1,27 @@
+app = 'korean-patent-mcp'
+primary_region = 'nrt'
+
+[build]
+  dockerfile = 'Dockerfile'
+
+[env]
+  NODE_ENV = 'production'
+  RATE_LIMIT_RPM = '120'
+  TRUST_PROXY = '1'
+  # 자체 키 없는 요청이 서버 KIPRIS_API_KEY 로 폴백할 때의 전역 분당 상한
+  # (무료 1,000회/월 보호). 0 이면 폴백 차단(BYOK 강제).
+  FALLBACK_RATE_LIMIT_RPM = '30'
+  # 프로덕션 프런트엔드 도메인으로 교체 권장. 미설정 시 * (경고 로그).
+  # CORS_ORIGIN = 'https://your-frontend.example.com'
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = 'suspend'
+  auto_start_machines = true
+  min_machines_running = 0
+
+[[vm]]
+  memory = '256mb'
+  cpu_kind = 'shared'
+  cpus = 1

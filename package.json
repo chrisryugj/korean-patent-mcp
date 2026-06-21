@@ -1,0 +1,56 @@
+{
+  "name": "korean-patent-mcp",
+  "version": "0.2.1",
+  "description": "KIPRIS 특허·실용신안·상표·디자인 검색 MCP — 자유검색/항목검색/출원인/권리자/서지상세/상표/디자인 7개 도구",
+  "type": "module",
+  "main": "build/index.js",
+  "types": "build/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./build/index.d.ts",
+      "import": "./build/index.js"
+    },
+    "./lib/*": { "types": "./build/lib/*.d.ts", "import": "./build/lib/*.js" },
+    "./tools/*": { "types": "./build/tools/*.d.ts", "import": "./build/tools/*.js" }
+  },
+  "bin": {
+    "korean-patent-mcp": "build/index.js"
+  },
+  "files": [
+    "build",
+    "README.md",
+    "LICENSE",
+    ".env.example"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "start": "node build/index.js",
+    "test": "node test/run-scenarios.mjs",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mcp",
+    "kipris",
+    "patent",
+    "특허",
+    "특허검색",
+    "model-context-protocol"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.1",
+    "@xmldom/xmldom": "^0.9.8",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "zod": "^3.25.76 || ^4.0.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.19.3",
+    "typescript": "^5.9.3"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  }
+}
