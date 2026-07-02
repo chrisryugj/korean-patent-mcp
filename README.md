@@ -16,6 +16,17 @@
 | `search_trademark` | **상표검색** — 상표명 키워드 (출원상태·상품류·권리자·견본이미지) | `trademarkInfoSearchService/getWordSearch` |
 | `search_design` | **디자인검색** — 물품명 키워드 (디자인분류·출원상태·도면이미지) | `designInfoSearchService/getWordSearch` |
 
+## 원격 엔드포인트 (설치 없음)
+
+공개 remote 서버가 떠 있어 설치 없이 바로 쓸 수 있다:
+
+```
+https://mcp.gomdori.app/patent
+```
+
+- claude.ai 커스텀 커넥터 URL로 붙여넣으면 끝 (자체 KIPRIS 키는 `kipris-key` 헤더로 전달 가능, 없으면 서버 공용 키 폴백)
+- Claude Code: `claude mcp add --transport http korean-patent https://mcp.gomdori.app/patent`
+
 ## 설치 & 빌드
 
 ```bash
