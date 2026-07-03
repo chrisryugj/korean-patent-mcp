@@ -3,9 +3,9 @@
 > ## ⚠️ 배포 — 통합 호스트 (2026-07-02부터)
 >
 > 프로덕션 공식 서빙은 **[gomdori-mcp](https://github.com/chrisryugj/gomdori-mcp) 통합 호스트**(fly 앱 `korean-law-mcp` 1대, MCP 5종 동거)다.
-> - 공식 주소: `https://mcp.gomdori.app/patent` (구 `korean-patent-mcp.fly.dev/mcp`는 과도기 병행, 이전 후 scale 0 예정)
+> - 공식 주소: `https://mcp.gomdori.app/patent` (구 앱 `korean-patent-mcp`는 통합 완료로 **scale 0 처리됨**)
 > - **반영 절차**: 이 레포는 npm 미배포 — main에 커밋·푸시한 뒤 `cd ~/workspace/gomdori-mcp && fly deploy -c fly.production.toml` (Dockerfile이 GitHub main을 clone해 빌드) → `curl https://mcp.gomdori.app/healthz` 확인
-> - 이 레포의 `fly deploy`는 **구 병행 앱에만** 반영된다 — 통합 반영은 반드시 위 절차로
+> - 구 앱은 scale 0이므로 이 레포에서 `fly deploy` 직접 실행은 무의미 — 통합 반영은 반드시 위 절차로
 
 
 Korean Patent MCP — KIPRIS Plus 특허·실용신안·상표·디자인 검색 MCP (7툴). korean-law-mcp 패턴 벤치마킹.
