@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/chrisryugj-korean-patent-mcp-badge.png)](https://mseep.ai/app/chrisryugj-korean-patent-mcp)
+
 # Korean Patent MCP (KIPRIS)
 
 특허청 **KIPRIS Plus** 오픈API를 MCP 도구로 노출하는 서버. 특허·실용신안·상표·디자인을 키워드/항목/출원인/권리자로 검색하고, 출원번호로 상세 서지정보를 조회한다.
