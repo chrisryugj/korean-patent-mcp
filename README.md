@@ -72,17 +72,26 @@ node build/index.js --mode http --port 8000
 ```
 
 키는 요청별(BYOK) 헤더가 우선이고, 없으면 서버 `KIPRIS_API_KEY` 로 폴백한다.
-폴백 호출은 무료 한도(1,000회/월) 보호를 위해 `FALLBACK_RATE_LIMIT_RPM` 전역 상한이 걸린다.
+폴백 호출은 무료 한도(1,000회/월)를 보호해야 하는데, **실질 방어선은 분당이 아니라 일일 총량**이다
+(분당 상한만으로는 하루 이론 최대가 월 한도를 수십 배 넘는다). 그래서 분당 게이트는 버스트 흡수용으로만
+두고 총량은 `FALLBACK_DAILY_CAP`(기본 30 ≈ 1,000÷31)이 잡는다. 두 게이트 모두 `tools/call`만 계수하며,
+핸드셰이크(`initialize`/`tools/list`)는 KIPRIS 쿼터를 쓰지 않으므로 계수하지 않는다 — 계수하면 커넥터가
+붙을 때마다 쿼터가 깎여 **도구 목록조차 못 싣는다**.
 
 **HTTP 모드 환경변수**
 
 | 변수 | 기본 | 설명 |
 |------|------|------|
 | `CORS_ORIGIN` | `*` (경고) | 허용 도메인. 프로덕션은 명시 권장 |
-| `RATE_LIMIT_RPM` | `60` | IP당 분당 요청 한도 |
-| `FALLBACK_RATE_LIMIT_RPM` | `60` | 키 없는 요청의 서버 키 폴백 전역 상한. `0`이면 폴백 차단(BYOK 강제) |
+| `RATE_LIMIT_RPM` | `60` | IP당 분당 `tools/call` 한도 |
+| `FALLBACK_RATE_LIMIT_RPM` | `10` | 키 없는 요청의 서버 키 폴백 분당 상한(토큰버킷 — 연속 리필). `0`이면 폴백 차단(BYOK 강제) |
+| `FALLBACK_RATE_LIMIT_BURST` | = RPM | 폴백 토큰버킷 용량(1분치) |
+| `FALLBACK_DAILY_CAP` | `30` | 폴백의 롤링 24시간 총량 캡. `0`이면 비활성 |
+| `MCP_MAX_BATCH_CALLS` | `20` | 단일 POST(JSON-RPC 배치)의 `tools/call` 최대 개수 |
 | `TRUST_PROXY` | `1` | Express trust proxy 단수. `true`/`all`은 XFF 스푸핑 위험 |
 | `MCP_BODY_LIMIT` | `100kb` | POST 본문 크기 한도 |
+
+429 응답에는 `Retry-After` 헤더와 본문 대기 초 안내가 실린다.
 
 Docker / Fly.io:
 

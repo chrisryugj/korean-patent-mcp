@@ -72,7 +72,9 @@ KIPRIS_API_KEY=키 node build/index.js --mode http --port 8000
 
 ## HTTP 모드 보안 (law-mcp 미러링)
 
-- **BYOK + 폴백 상한**: 요청 헤더 키 우선, 없으면 서버 `KIPRIS_API_KEY` 폴백. 폴백은 `FALLBACK_RATE_LIMIT_RPM` 전역 분당 상한으로 무료 한도(1,000회/월) 보호. `0`이면 폴백 차단(BYOK 강제).
+- **BYOK + 폴백 상한**: 요청 헤더 키 우선, 없으면 서버 `KIPRIS_API_KEY` 폴백. 폴백은 토큰버킷 분당 상한(`FALLBACK_RATE_LIMIT_RPM`, 기본 10) + **롤링 일일 캡**(`FALLBACK_DAILY_CAP`, 기본 30 ≈ 1,000회/월 ÷ 31)으로 보호. `0`이면 폴백 차단(BYOK 강제).
+- **★ 두 게이트 모두 `tools/call`만 계수** — 핸드셰이크(`initialize`/`tools/list`)를 계수하면 커넥터가 붙을 때마다 쿼터가 깎여 무키 사용자가 상시 429, 증상은 "도구 못 찾음"으로 나타난다(2026-08-12 실측: 무키 2발째 429). law-mcp v4.6.2/4.6.6과 동일한 수정. 배치는 `tools/call` 개수만큼 계수(`MCP_MAX_BATCH_CALLS` 상한 20).
+- **월 한도는 분당 게이트로 못 지킨다** — 30rpm이면 하루 이론 최대 43,200으로 월 1,000을 수십 배 넘는다. 총량 방어는 반드시 일일 캡으로.
 - CORS 미설정 시 `*` + 경고 로그. 보안헤더(X-Frame-Options/Referrer-Policy/X-Content-Type-Options). GET/DELETE `/mcp` → 405. SIGINT/SIGTERM graceful shutdown.
 - 에러는 `scrubError`(메시지+스택 키 마스킹) 경유.
 
