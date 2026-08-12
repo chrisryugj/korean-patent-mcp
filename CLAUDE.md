@@ -4,7 +4,7 @@
 >
 > 프로덕션 공식 서빙은 **[gomdori-mcp](https://github.com/chrisryugj/gomdori-mcp) 통합 호스트**(fly 앱 `korean-law-mcp` 1대, MCP 5종 동거)다.
 > - 공식 주소: `https://mcp.gomdori.app/patent` (구 앱 `korean-patent-mcp`는 통합 완료로 **scale 0 처리됨**)
-> - **반영 절차**: 이 레포는 npm 미배포 — main에 커밋·푸시한 뒤 `cd ~/workspace/gomdori-mcp && fly deploy -c fly.production.toml` (Dockerfile이 GitHub main을 clone해 빌드) → `curl https://mcp.gomdori.app/healthz` 확인
+> - **반영 절차**: 이 레포는 npm 미배포 — ①main에 커밋·푸시 → ②**`gomdori-mcp/Dockerfile`의 `ARG PATENT_SHA` 를 새 커밋 SHA로 갱신**(⚠️ Dockerfile은 main이 아니라 이 SHA를 checkout 한다 — 안 고치면 구 코드가 그대로 빌드돼 배포가 조용히 무효) → ③`cd ~/workspace/gomdori-mcp && fly deploy -c fly.production.toml` → ④`curl https://mcp.gomdori.app/healthz` 확인
 > - 구 앱은 scale 0이므로 이 레포에서 `fly deploy` 직접 실행은 무의미 — 통합 반영은 반드시 위 절차로
 
 
