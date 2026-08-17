@@ -23,7 +23,7 @@ src/
 │   ├── format.ts           PatentHit/Trademark/Design/Detail → 텍스트
 │   ├── errors.ts           KiprisApiError + resultCode 표준화
 │   ├── cache.ts            patentCache (TTL+LRU)
-│   ├── schemas.ts          truncateResponse (50KB)
+│   ├── schemas.ts          truncateResponse (5만 자 — 바이트 아님)
 │   ├── session-state.ts    AsyncLocalStorage 요청별 키
 │   └── types.ts
 ├── tools/              search / advanced / applicant / rightholder / detail / trademark / design
