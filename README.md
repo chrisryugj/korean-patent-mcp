@@ -1,5 +1,8 @@
 # Korean Patent MCP (KIPRIS)
 
+[![version](https://img.shields.io/github/package-json/v/chrisryugj/korean-patent-mcp)](package.json)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 특허청 **KIPRIS Plus** 오픈API를 MCP 도구로 노출하는 서버. 특허·실용신안·상표·디자인을 키워드/항목/출원인/권리자로 검색하고, 출원번호로 상세 서지정보를 조회한다.
 
 > korean-law-mcp 아키텍처를 벤치마킹 — lib/tools 레이어 분리, fetch 재시도·키 마스킹, Zod 검증, stateless HTTP, TTL 캐시, 응답 크기 제한, `[NOT_FOUND]` 환각방지 패턴.
@@ -18,7 +21,8 @@
 
 ## 원격 엔드포인트 (설치 없음)
 
-공개 remote 서버가 떠 있어 설치 없이 바로 쓸 수 있다:
+공개 remote 서버가 떠 있어 설치 없이 바로 쓸 수 있다. 공식 주소는 통합 호스트 하나뿐이다
+(구 개별 주소 `korean-patent-mcp.fly.dev` 는 통합 후 중단 — 설정에 남아 있으면 아래로 교체):
 
 ```
 https://mcp.gomdori.app/patent
@@ -26,6 +30,7 @@ https://mcp.gomdori.app/patent
 
 - claude.ai 커스텀 커넥터 URL로 붙여넣으면 끝 (자체 KIPRIS 키는 `kipris-key` 헤더로 전달 가능, 없으면 서버 공용 키 폴백)
 - Claude Code: `claude mcp add --transport http korean-patent https://mcp.gomdori.app/patent`
+- 서버 공용 키 폴백은 **무키 사용자 전원이 공유하는 전역 쿼터**(운영값: 분당 30 + 롤링 24시간 30회)라 상시 사용에는 부족하다. 자기 키를 헤더로 넘기면 이 게이트를 타지 않는다.
 
 ## 설치 & 빌드
 
@@ -114,11 +119,11 @@ flyctl deploy
 | "카카오 상표 등록됐나?" | `search_trademark(query="카카오")` |
 | "의자 디자인 등록 사례" | `search_design(query="의자")` |
 
-**공통 옵션**
-- `numOfRows` (1~100, 기본 10), `pageNo` (기본 1) — 페이징 지원
-- `patent` / `utility` — 검색 대상 (특허/실용신안)
-- `sortSpec` — `AD`(출원일) `OPD`(공개일) `GD`(공고일) `RD`(등록일) `PD`(우선일)
-- `descSort` — 내림차순(최신순) 여부
+**공통 옵션** (`get_patent_detail` 은 `applicationNumber` 만 받는다)
+- `numOfRows` (1~100, 기본 10), `pageNo` (기본 1) — 검색 6종 공통, 페이징 지원
+- `patent` / `utility` — 검색 대상 (특허/실용신안). 상표·디자인 검색에는 없음
+- `descSort` — 내림차순(최신순) 여부. 상표·디자인 검색에는 없음
+- `sortSpec` — `AD`(출원일) `OPD`(공개일) `GD`(공고일) `RD`(등록일) `PD`(우선일). 자유검색·항목검색만
 - `withAbstract` — (자유검색) 초록 본문 포함
 
 ## 동작·한계 (실측 기준)
@@ -145,6 +150,7 @@ flyctl deploy
 ```
 src/
 ├── index.ts            진입점 (STDIO / HTTP 모드)
+├── version.ts          서버 버전 단일 출처 (MCP serverInfo · 루트 `/` 정보 응답)
 ├── tool-registry.ts    도구 7개 등록 + Zod→JSON Schema 변환 (apiKey 숨김)
 ├── lib/
 │   ├── api-client.ts       KIPRIS 엔드포인트 래핑 (openapi/rest + kipo-api)
@@ -152,6 +158,7 @@ src/
 │   ├── xml-parser.ts       헤더검사·검색목록·항목검색·상표·디자인·서지상세 파싱
 │   ├── format.ts           도메인별 결과 텍스트 포맷팅
 │   ├── errors.ts           KIPRIS resultCode 표준화 + 환각방지
+│   ├── rate-limit.ts       폴백 게이트 — 토큰버킷 + 롤링 일일 캡
 │   ├── cache.ts            TTL+LRU 캐시
 │   ├── schemas.ts          응답 크기 제한
 │   ├── session-state.ts    요청별 키 격리 (AsyncLocalStorage)
