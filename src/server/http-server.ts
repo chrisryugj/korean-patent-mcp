@@ -2,7 +2,7 @@ import express from "express"
 import type { Server } from "@modelcontextprotocol/sdk/server/index.js"
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js"
 import { requestContext } from "../lib/session-state.js"
-import { createTokenBucket, createDailyCap } from "../lib/rate-limit.js"
+import { createFallbackGate, fallbackDeniedMessage, intEnv } from "../lib/fallback-gate.js"
 import { maskSensitiveUrl } from "../lib/fetch-with-retry.js"
 import { VERSION } from "../version.js"
 import { TOOL_COUNTS } from "../tool-registry.js"
@@ -122,16 +122,16 @@ export async function startHTTPServer(createServer: () => Server, port: number) 
   const fallbackBurst = parseInt(process.env.FALLBACK_RATE_LIMIT_BURST || String(fallbackRpm), 10)
   // 1,000회/월 ÷ 31일 ≈ 32 — 여유를 두고 30. 초과분은 BYOK로 유도한다.
   const fallbackDailyLimit = parseInt(process.env.FALLBACK_DAILY_CAP || "30", 10)
-  const fallbackMinute = createTokenBucket(fallbackRpm, fallbackBurst)
-  const fallbackDay = createDailyCap(fallbackDailyLimit)
-  // n = 이 요청이 소모하는 tools/call 개수 (배치는 배열 길이만큼 서버 키를 쓴다)
-  function fallbackAllowed(n: number): { ok: boolean; retryAfterSec: number; daily: boolean } {
-    const minute = fallbackMinute.take(n)
-    if (!minute.ok) return { ...minute, daily: false }
-    // 분당 게이트를 통과한 요청만 일일 총량을 소모한다 (거부분 낭비 방지)
-    const day = fallbackDay.take(n)
-    return { ok: day.ok, retryAfterSec: day.retryAfterSec, daily: !day.ok }
+  // 공용 몫 앞의 클라이언트(IP)별 분당·하루 몫(0 = 끔). 판정 순서와 환불은 lib/fallback-gate.ts
+  const gateOpts = {
+    rpm: fallbackRpm,
+    burst: fallbackBurst,
+    dailyCap: fallbackDailyLimit,
+    perClientRpm: intEnv(process.env.FALLBACK_PER_IP_RPM, 0),
+    perClientDaily: intEnv(process.env.FALLBACK_PER_IP_DAILY, 0),
   }
+  const fallbackGate = createFallbackGate(gateOpts)
+  setInterval(() => fallbackGate.sweep(), 5 * 60 * 1000).unref()
 
   app.post("/mcp", async (req, res) => {
     const apiKey =
@@ -154,17 +154,12 @@ export async function startHTTPServer(createServer: () => Server, port: number) 
       })
     }
     if (!apiKey && callCount > 0) {
-      const verdict = fallbackAllowed(callCount)
+      const verdict = fallbackGate.take(req.ip || req.socket.remoteAddress || "unknown", callCount)
       if (!verdict.ok) {
         res.setHeader("Retry-After", String(verdict.retryAfterSec))
         return res.status(429).json({
           jsonrpc: "2.0",
-          error: {
-            code: -32000,
-            message: verdict.daily
-              ? "Shared API daily cap reached (서버 키 무료 한도 보호). Provide your own key via 'x-api-key' header (무료 발급: https://plus.kipris.or.kr)."
-              : `Shared API quota exceeded — retry in ${verdict.retryAfterSec}s, or provide your own key via 'x-api-key' header (무료 발급: https://plus.kipris.or.kr).`,
-          },
+          error: { code: -32000, message: fallbackDeniedMessage(verdict, gateOpts) },
           id: null,
         })
       }

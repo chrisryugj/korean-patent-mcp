@@ -92,6 +92,8 @@ node build/index.js --mode http --port 8000
 | `FALLBACK_RATE_LIMIT_RPM` | `10` | 키 없는 요청의 서버 키 폴백 분당 상한(토큰버킷 — 연속 리필). `0`이면 폴백 차단(BYOK 강제) |
 | `FALLBACK_RATE_LIMIT_BURST` | = RPM | 폴백 토큰버킷 용량(1분치) |
 | `FALLBACK_DAILY_CAP` | `30` | 폴백의 롤링 24시간 총량 캡. `0`이면 비활성 |
+| `FALLBACK_PER_IP_RPM` | `0` | 폴백의 접속 IP별 분당 몫. 한 IP가 공용 분당 상한을 혼자 다 쓰지 못하게 함. `0`이면 끔 |
+| `FALLBACK_PER_IP_DAILY` | `0` | 폴백의 접속 IP별 24시간 몫. 한 IP가 하루 총량(30)을 혼자 다 쓰지 못하게 함. `0`이면 끔. 공개 서버(mcp.gomdori.app)는 분당·하루 모두 10 |
 | `MCP_MAX_BATCH_CALLS` | `20` | 단일 POST(JSON-RPC 배치)의 `tools/call` 최대 개수 |
 | `TRUST_PROXY` | `1` | Express trust proxy 단수. `true`/`all`은 XFF 스푸핑 위험 |
 | `MCP_BODY_LIMIT` | `100kb` | POST 본문 크기 한도 |

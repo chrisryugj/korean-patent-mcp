@@ -4,7 +4,7 @@
 >
 > 프로덕션 공식 서빙은 **[gomdori-mcp](https://github.com/chrisryugj/gomdori-mcp) 통합 호스트**(fly 앱 `korean-law-mcp` 1대, MCP 5종 동거)다.
 > - 공식 주소: `https://mcp.gomdori.app/patent` (구 앱 `korean-patent-mcp`는 통합 완료로 **scale 0 처리됨**)
-> - **반영 절차**: 이 레포는 npm 미배포 — ①main에 커밋·푸시 → ②**`gomdori-mcp/Dockerfile`의 `ARG PATENT_SHA` 를 새 커밋 SHA로 갱신**(⚠️ Dockerfile은 main이 아니라 이 SHA를 checkout 한다 — 안 고치면 구 코드가 그대로 빌드돼 배포가 조용히 무효) → ③`cd ~/workspace/gomdori-mcp && fly deploy -c fly.production.toml` → ④`curl https://mcp.gomdori.app/healthz` 확인
+> - **반영 절차**: 이 레포는 npm 미배포 — ①main에 커밋·푸시 → ②**`gomdori-mcp/Dockerfile`의 `ARG PATENT_SHA` 를 새 커밋 SHA로 갱신**(⚠️ Dockerfile은 main이 아니라 이 SHA를 checkout 한다 — 안 고치면 구 코드가 그대로 빌드돼 배포가 조용히 무효) → ③gomdori-mcp main 커밋·푸시(운영 ax-mcp 가 1분 안에 빌드·교체. fly 는 2026-11-17 부터 옛 주소 안내 서버라 fly deploy 하지 말 것) → ④`curl https://mcp.gomdori.app/healthz` 확인
 > - 구 앱은 scale 0이므로 이 레포에서 `fly deploy` 직접 실행은 무의미 — 통합 반영은 반드시 위 절차로
 
 
@@ -72,7 +72,7 @@ KIPRIS_API_KEY=키 node build/index.js --mode http --port 8000
 
 ## HTTP 모드 보안 (law-mcp 미러링)
 
-- **BYOK + 폴백 상한**: 요청 헤더 키 우선, 없으면 서버 `KIPRIS_API_KEY` 폴백. 폴백은 토큰버킷 분당 상한(`FALLBACK_RATE_LIMIT_RPM`, 기본 10) + **롤링 일일 캡**(`FALLBACK_DAILY_CAP`, 기본 30 ≈ 1,000회/월 ÷ 31)으로 보호. `0`이면 폴백 차단(BYOK 강제).
+- **BYOK + 폴백 상한**: 요청 헤더 키 우선, 없으면 서버 `KIPRIS_API_KEY` 폴백. 폴백은 토큰버킷 분당 상한(`FALLBACK_RATE_LIMIT_RPM`, 기본 10) + **롤링 일일 캡**(`FALLBACK_DAILY_CAP`, 기본 30 ≈ 1,000회/월 ÷ 31)으로 보호. `0`이면 폴백 차단(BYOK 강제). 그 앞에 접속 IP별 분당·하루 몫(`FALLBACK_PER_IP_RPM`·`FALLBACK_PER_IP_DAILY`, 기본 0 = 끔, 운영 10·10)을 둬 IP 하나가 하루 30건을 혼자 다 쓰지 못하게 한다(`src/lib/fallback-gate.ts`, 0.2.3). 단위 테스트 `npm run test:unit`(KIPRIS 안 부름)
 - **★ 두 게이트 모두 `tools/call`만 계수** — 핸드셰이크(`initialize`/`tools/list`)를 계수하면 커넥터가 붙을 때마다 쿼터가 깎여 무키 사용자가 상시 429, 증상은 "도구 못 찾음"으로 나타난다(2026-08-12 실측: 무키 2발째 429). law-mcp v4.6.2/4.6.6과 동일한 수정. 배치는 `tools/call` 개수만큼 계수(`MCP_MAX_BATCH_CALLS` 상한 20).
 - **월 한도는 분당 게이트로 못 지킨다** — 30rpm이면 하루 이론 최대 43,200으로 월 1,000을 수십 배 넘는다. 총량 방어는 반드시 일일 캡으로.
 - CORS 미설정 시 `*` + 경고 로그. 보안헤더(X-Frame-Options/Referrer-Policy/X-Content-Type-Options). GET/DELETE `/mcp` → 405. SIGINT/SIGTERM graceful shutdown.

@@ -1,6 +1,6 @@
 {
   "name": "korean-patent-mcp",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "KIPRIS 특허·실용신안·상표·디자인 검색 MCP — 자유검색/항목검색/출원인/권리자/서지상세/상표/디자인 7개 도구",
   "type": "module",
   "main": "build/index.js",
@@ -33,6 +33,7 @@
     "watch": "tsc --watch",
     "start": "node build/index.js",
     "test": "node test/run-scenarios.mjs",
+    "test:unit": "tsc && node --test test/fallback-gate.test.mjs",
     "prepublishOnly": "npm run build"
   },
   "keywords": [
